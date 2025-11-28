@@ -1,0 +1,46 @@
+---
+# Central monitoring account where all metrics are aggregated
+central_monitoring_account_id: "123456789012"
+central_monitoring_region: "us-east-1"
+
+# AWS accounts to monitor
+aws_accounts:
+  - account_id: "111111111111"
+    role_name: "AnsibleAutomationRole"
+    regions:
+      - us-east-1
+      - us-west-2
+  - account_id: "222222222222"
+    role_name: "AnsibleAutomationRole"
+    regions:
+      - us-east-1
+  - account_id: "333333333333"
+    role_name: "AnsibleAutomationRole"
+    regions:
+      - eu-west-1
+
+# VM discovery filters
+vm_discovery_tags:
+  MonitorDisk: "true"
+
+# CloudWatch Agent configuration
+cloudwatch_agent_version: "latest"
+cloudwatch_namespace: "CustomMetrics/DiskMonitoring"
+
+# Disk monitoring thresholds (percentage)
+disk_thresholds:
+  warning: 75
+  critical: 85
+  emergency: 95
+
+# SNS notification settings
+sns_topic_name: "DiskMonitoring-Alerts"
+sns_email_endpoints:
+  - "ops-team@example.com"
+  - "devops@example.com"
+
+# Metric collection interval (seconds)
+metric_collection_interval: 60
+
+# SSM connection settings
+ssm_connection_timeout: 30
