@@ -1,0 +1,19 @@
+---
+- name: Deploy CloudWatch Agent to all discovered VMs
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../inventory/group_vars/all.yml
+  
+  tasks:
+    - name: Load discovered instances
+      include_vars:
+        file: /tmp/discovered_instances.json
+        name: discovered_vms
+      
+    - name: Deploy CloudWatch Agent via SSM
+      include_role:
+        name: cloudwatch_agent
+      loop: "{{ discovered_vms.instances }}"
+      loop_control:
+        loop_var: instance

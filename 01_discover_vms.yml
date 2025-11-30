@@ -1,0 +1,15 @@
+---
+- name: Discover EC2 instances across multiple AWS accounts
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../inventory/group_vars/all.yml
+  
+  tasks:
+    - name: Discover VMs in all accounts
+      include_role:
+        name: vm_discovery
+      
+    - name: Display discovered instances summary
+      debug:
+        msg: "Discovered {{ discovered_instances | length }} instances across {{ aws_accounts | length }} accounts"

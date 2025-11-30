@@ -1,0 +1,47 @@
+---
+- name: Setup centralized monitoring and alerting
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../inventory/group_vars/all.yml
+  
+  tasks:
+    - name: Create SNS topic for alerts
+      amazon.aws.sns_topic:
+        name: "{{ sns_topic_name }}"
+        region: "{{ central_monitoring_region }}"
+        subscriptions: "{{ sns_email_endpoints | map('regex_replace', '^(.*)$', 'email:\\1') | list }}"
+        state: present
+      register: sns_topic
+    
+    - name: Load discovered instances
+      include_vars:
+        file: /tmp/discovered_instances.json
+        name: discovered_vms
+    
+    - name: Create CloudWatch alarms for each instance
+      amazon.aws.cloudwatch_metric_alarm:
+        name: "DiskUsage-{{ item.instance_id }}-{{ item.device }}"
+        region: "{{ central_monitoring_region }}"
+        namespace: "{{ cloudwatch_namespace }}"
+        metric: "disk_used_percent"
+        dimensions:
+          InstanceId: "{{ item.instance_id }}"
+          Device: "{{ item.device }}"
+        statistic: Average
+        comparison: GreaterThanThreshold
+        threshold: "{{ disk_thresholds.critical }}"
+        period: 300
+        evaluation_periods: 2
+        alarm_actions:
+          - "{{ sns_topic.sns_arn }}"
+        state: present
+      loop: "{{ discovered_vms.instances }}"
+      when: discovered_vms.instances is defined
+    
+    - name: Create CloudWatch dashboard
+      community.aws.cloudwatch_dashboard:
+        name: "DiskMonitoring-Overview"
+        region: "{{ central_monitoring_region }}"
+        state: present
+        dashboard_body: "{{ lookup('template', '../roles/cloudwatch_agent/templates/dashboard.json.j2') }}"
